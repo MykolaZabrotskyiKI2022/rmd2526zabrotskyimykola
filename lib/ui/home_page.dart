@@ -34,7 +34,7 @@ class HomePage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('IoT Dashboard'),
+        title: const Text('DHT Dashboard'),
         actions: [
           IconButton(
             onPressed: () => _goToProfile(context),

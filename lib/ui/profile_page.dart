@@ -23,16 +23,16 @@ class ProfilePage extends StatelessWidget {
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: horizontal, vertical: 24),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const CircleAvatar(radius: 40, child: Icon(Icons.person, size: 40)),
-            const SizedBox(height: 16),
-            const Text('Mykola Zabrotskyi', style: TextStyle(fontSize: 22)),
-            const SizedBox(height: 8),
-            const Text('Email: example@mail.com'),
-            const SizedBox(height: 8),
-            const Text('IoT role: Room monitor user'),
+            CircleAvatar(radius: 40, child: Icon(Icons.person, size: 40)),
+            SizedBox(height: 16),
+            Text('Mykola Zabrotskyi', style: TextStyle(fontSize: 22)),
+            SizedBox(height: 8),
+            Text('Email: example@mail.com'),
+            SizedBox(height: 8),
+            Text('DHT role: Room monitor user'),
           ],
         ),
       ),

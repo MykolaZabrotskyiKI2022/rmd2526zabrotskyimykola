@@ -27,7 +27,7 @@ class LoginPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'Welcome to IoT Monitor',
+                'Welcome to DHT Monitor',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 24),
               ),

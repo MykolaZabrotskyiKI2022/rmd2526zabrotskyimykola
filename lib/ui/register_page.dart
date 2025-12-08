@@ -27,7 +27,7 @@ class RegisterPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'Create IoT account',
+                'Create DHT account',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 24),
               ),
