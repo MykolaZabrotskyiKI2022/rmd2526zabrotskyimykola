@@ -11,7 +11,7 @@ class RegisterPage extends StatelessWidget {
   }
 
   void _goToHome(BuildContext context) {
-    Navigator.pushReplacementNamed(context, '/home');
+    Navigator.pop(context, '/login');
   }
 
   @override
