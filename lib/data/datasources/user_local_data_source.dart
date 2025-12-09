@@ -1,4 +1,5 @@
 import 'package:rmd2526zabrotskyimykola/domain/entities/app_user.dart';
+// ignore: depend_on_referenced_packages
 import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class UserLocalDataSource {
