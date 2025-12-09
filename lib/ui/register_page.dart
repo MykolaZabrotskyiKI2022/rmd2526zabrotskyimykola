@@ -44,7 +44,7 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     _showMessage('Registration successful');
-    Navigator.pushReplacementNamed(context, '/home');
+    Navigator.pop(context);
   }
 
   void _goBackToLogin() {

@@ -62,14 +62,12 @@ class _ProfilePageState extends State<ProfilePage> {
             const CircleAvatar(radius: 40, child: Icon(Icons.person, size: 40)),
             const SizedBox(height: 16),
 
-            // User name
             Text(
               user?.name ?? 'Unknown user',
               style: const TextStyle(fontSize: 22),
             ),
             const SizedBox(height: 8),
 
-            // Email
             Text('Email: ${user?.email ?? '-'}'),
             const SizedBox(height: 8),
 
@@ -82,9 +80,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
             const SizedBox(height: 12),
 
-            // Logout
             FilledButton(
               onPressed: () {
+                Navigator.pop(context, '/home');
                 Navigator.pushReplacementNamed(context, '/login');
               },
               child: const Text('Log out'),
