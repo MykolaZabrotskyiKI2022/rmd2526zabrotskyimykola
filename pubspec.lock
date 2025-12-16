@@ -50,7 +50,7 @@ packages:
     source: hosted
     version: "1.19.1"
   connectivity_plus:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: connectivity_plus
       sha256: b5e72753cf63becce2c61fd04dfe0f1c430cc5278b53a1342dc5ad839eab29ec
@@ -217,7 +217,7 @@ packages:
     source: hosted
     version: "1.17.0"
   mqtt_client:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: mqtt_client
       sha256: "8bcd0bd6dd85343df249164f9d4b2232002b2ce8742875431421863d3cbcd0db"
@@ -289,7 +289,7 @@ packages:
     source: hosted
     version: "2.1.8"
   shared_preferences:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: shared_preferences
       sha256: "6e8bf70b7fef813df4e9a36f658ac46d107db4b4cfe1048b477d4e453a8159f5"
