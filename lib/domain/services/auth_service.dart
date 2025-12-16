@@ -37,19 +37,24 @@ class AuthService {
   }) async {
     final savedUser = await _repository.loadUser();
 
-    if (savedUser == null) {
-      return 'User is not registered yet';
-    }
+    if (savedUser == null) return 'User is not registered yet';
+    if (savedUser.email.trim() != email.trim()) return 'Email does not match';
+    if (savedUser.password != password) return 'Incorrect password';
 
-    if (savedUser.email.trim() != email.trim()) {
-      return 'Email does not match';
-    }
-
-    if (savedUser.password != password) {
-      return 'Incorrect password';
-    }
-
+    await _repository.setSessionActive(true);
     return null;
+  }
+
+  Future<bool> canAutoLogin() {
+    return _repository.isSessionActive();
+  }
+
+  Future<AppUser?> autoLoginUser() {
+    return _repository.loadUser();
+  }
+
+  Future<void> logout() {
+    return _repository.setSessionActive(false);
   }
 
   Future<AppUser?> getCurrentUser() {

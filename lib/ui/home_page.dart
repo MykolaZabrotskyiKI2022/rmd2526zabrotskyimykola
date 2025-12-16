@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:rmd2526zabrotskyimykola/di/app_dependencies.dart';
 import 'package:rmd2526zabrotskyimykola/domain/entities/app_user.dart';
@@ -12,19 +15,42 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   AppUser? _user;
+
   final TextEditingController _nameCtrl = TextEditingController();
+
   bool _isLoading = true;
+  bool _mqttConnected = false;
+
+  String _temperature = '--';
+  String _humidity = '--';
+
+  StreamSubscription<String>? _tempSub;
+  StreamSubscription<String>? _humSub;
+  StreamSubscription<List<ConnectivityResult>>? _connSub;
 
   @override
   void initState() {
     super.initState();
-    _loadUser();
+    _bootstrap();
   }
 
   @override
   void dispose() {
+    _tempSub?.cancel();
+    _humSub?.cancel();
+    _connSub?.cancel();
     _nameCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _bootstrap() async {
+    await _loadUser();
+    await _checkInternetOnStart();
+    _watchConnectivity();
+    await _setupMqttIfPossible();
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
   }
 
   Future<void> _loadUser() async {
@@ -34,8 +60,64 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _user = user;
       _nameCtrl.text = user?.name ?? '';
-      _isLoading = false;
     });
+  }
+
+  Future<void> _checkInternetOnStart() async {
+    final ok = await internetService.hasInternet();
+    if (!ok) {
+      _showMessage('No Internet. MQTT will be unavailable.');
+    }
+  }
+
+  void _watchConnectivity() {
+    _connSub = Connectivity().onConnectivityChanged.listen((results) async {
+      final noNetwork = results.contains(ConnectivityResult.none);
+
+      if (noNetwork) {
+        _showMessage('Network lost. MQTT may stop updating.');
+        return;
+      }
+
+      final ok = await internetService.hasInternet();
+      if (!ok) {
+        _showMessage('Network is back, but Internet is not available.');
+        return;
+      }
+
+      if (!_mqttConnected) {
+        await _setupMqttIfPossible();
+      }
+    });
+  }
+
+  Future<void> _setupMqttIfPossible() async {
+    final ok = await internetService.hasInternet();
+    if (!ok) return;
+
+    try {
+      await mqttService.connect();
+
+      _tempSub?.cancel();
+      _humSub?.cancel();
+
+      _tempSub = mqttService.temperatureStream().listen((value) {
+        if (!mounted) return;
+        setState(() => _temperature = value.trim());
+      });
+
+      _humSub = mqttService.humidityStream().listen((value) {
+        if (!mounted) return;
+        setState(() => _humidity = value.trim());
+      });
+
+      if (!mounted) return;
+      setState(() => _mqttConnected = true);
+    } catch (_) {
+      _showMessage('MQTT connection failed.');
+      if (!mounted) return;
+      setState(() => _mqttConnected = false);
+    }
   }
 
   Future<void> _saveChanges() async {
@@ -45,22 +127,85 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    final updated = user.copyWith(name: _nameCtrl.text.trim());
+    final newName = _nameCtrl.text.trim();
+    if (newName.isEmpty) {
+      _showMessage('Name must not be empty');
+      return;
+    }
+
+    final updated = user.copyWith(name: newName);
     await authService.updateUser(updated);
+
+    if (!mounted) return;
 
     setState(() => _user = updated);
     _showMessage('User updated');
   }
 
-  Future<void> _deleteUser() async {
-    await authService.deleteUser();
+  void _goToProfile() {
+    Navigator.pushNamed(context, '/profile');
+  }
+
+  Future<void> _confirmLogout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Log out'),
+          content: const Text('Are you sure you want to log out?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Log out'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLogout != true) return;
+
+    await mqttService.disconnect();
+
+    await authService.logout();
     if (!mounted) return;
 
     Navigator.pushReplacementNamed(context, '/login');
   }
 
-  void _goToProfile() {
-    Navigator.pushNamed(context, '/profile');
+  Future<void> _confirmDeleteUser() async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete user'),
+          content: const Text(
+            'This will remove user data from local storage. Continue?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete != true) return;
+
+    await authService.deleteUser();
+    if (!mounted) return;
+
+    Navigator.pushReplacementNamed(context, '/login');
   }
 
   void _showMessage(String text) {
@@ -74,44 +219,67 @@ class _HomePageState extends State<HomePage> {
     }
 
     final user = _user;
+    final status = _mqttConnected ? 'MQTT: connected' : 'MQTT: offline';
 
     return Scaffold(
       appBar: AppBar(
         title: Text(user?.email ?? 'IoT Dashboard'),
         actions: [
-          IconButton(onPressed: _goToProfile, icon: const Icon(Icons.person)),
-          IconButton(onPressed: _deleteUser, icon: const Icon(Icons.delete)),
+          IconButton(
+            onPressed: _goToProfile,
+            icon: const Icon(Icons.person),
+            tooltip: 'Profile',
+          ),
+          IconButton(
+            onPressed: _confirmLogout,
+            icon: const Icon(Icons.logout),
+            tooltip: 'Log out',
+          ),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                status,
+                style: TextStyle(
+                  color: _mqttConnected ? Colors.green : Colors.orange,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
             if (user != null)
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text('Logged in as: ${user.email}'),
               ),
             const SizedBox(height: 16),
-            const SensorCard(
+
+            SensorCard(
               title: 'Temperature',
-              value: '22',
+              value: _temperature,
               unit: '°C',
               icon: Icons.thermostat,
             ),
             const SizedBox(height: 12),
-            const SensorCard(
+            SensorCard(
               title: 'Humidity',
-              value: '45',
+              value: _humidity,
               unit: '%',
               icon: Icons.water_drop,
             ),
+
             const Divider(height: 32),
+
             const Align(
               alignment: Alignment.centerLeft,
               child: Text('Edit display name:', style: TextStyle(fontSize: 16)),
             ),
             const SizedBox(height: 8),
+
             TextField(
               controller: _nameCtrl,
               decoration: const InputDecoration(
@@ -120,12 +288,21 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton(
-                onPressed: _saveChanges,
-                child: const Text('Save changes'),
-              ),
+
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _saveChanges,
+                    child: const Text('Save changes'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton(
+                  onPressed: _confirmDeleteUser,
+                  child: const Text('Delete user'),
+                ),
+              ],
             ),
           ],
         ),

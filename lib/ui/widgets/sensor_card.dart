@@ -1,4 +1,3 @@
-// lib/ui/widgets/sensor_card.dart
 import 'package:flutter/material.dart';
 
 class SensorCard extends StatelessWidget {
@@ -18,23 +17,12 @@ class SensorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(icon, size: 32),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title),
-                Text(
-                  '$value $unit',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ],
-            ),
-          ],
+      child: ListTile(
+        leading: Icon(icon, size: 32),
+        title: Text(title),
+        trailing: Text(
+          '$value$unit',
+          style: Theme.of(context).textTheme.headlineSmall,
         ),
       ),
     );
