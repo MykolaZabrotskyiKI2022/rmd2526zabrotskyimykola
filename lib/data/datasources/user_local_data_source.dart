@@ -4,16 +4,30 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class UserLocalDataSource {
   Future<void> saveUser(AppUser user);
-
   Future<AppUser?> getUser();
-
   Future<void> clearUser();
+
+  Future<void> setSessionActive(bool value);
+  Future<bool> isSessionActive();
 }
 
 class UserLocalDataSourcePrefs implements UserLocalDataSource {
   static const _keyEmail = 'user_email';
   static const _keyName = 'user_name';
   static const _keyPassword = 'user_password';
+  static const _keySession = 'session_active';
+
+  @override
+  Future<void> setSessionActive(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keySession, value);
+  }
+
+  @override
+  Future<bool> isSessionActive() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keySession) ?? false;
+  }
 
   @override
   Future<void> saveUser(AppUser user) async {

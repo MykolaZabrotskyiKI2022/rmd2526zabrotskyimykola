@@ -8,6 +8,16 @@ class UserRepositoryImpl implements UserRepository {
   final UserLocalDataSource _local;
 
   @override
+  Future<void> setSessionActive(bool value) {
+    return _local.setSessionActive(value);
+  }
+
+  @override
+  Future<bool> isSessionActive() {
+    return _local.isSessionActive();
+  }
+
+  @override
   Future<void> saveUser(AppUser user) {
     return _local.saveUser(user);
   }

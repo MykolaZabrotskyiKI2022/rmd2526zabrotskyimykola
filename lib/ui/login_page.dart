@@ -11,10 +11,10 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _emailCtrl = TextEditingController();
-  final TextEditingController _passwordCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
 
-  bool _isLoading = false;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -23,72 +23,63 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  Future<void> _onLoginPressed() async {
-    setState(() => _isLoading = true);
+  Future<void> _login() async {
+    final hasInternet = await internetService.hasInternet();
+    if (!hasInternet) {
+      _show('No Internet connection');
+      return;
+    }
+
+    setState(() => _loading = true);
 
     final error = await authService.login(
       email: _emailCtrl.text,
       password: _passwordCtrl.text,
     );
 
-    if (!mounted) return;
-
-    setState(() => _isLoading = false);
+    setState(() => _loading = false);
 
     if (error != null) {
-      _showMessage(error);
+      _show(error);
       return;
     }
 
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/home');
   }
 
-  void _goToRegister() {
-    Navigator.pushNamed(context, '/register');
-  }
-
-  void _showMessage(String text) {
+  void _show(String text) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final padding = width > 600 ? 80.0 : 24.0;
+    final padding = MediaQuery.of(context).size.width > 600 ? 80.0 : 24.0;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: padding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Welcome to IoT Monitor',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 24),
-              ),
-              const SizedBox(height: 24),
-              AuthTextField(label: 'Email', controller: _emailCtrl),
-              const SizedBox(height: 12),
-              AuthTextField(
-                label: 'Password',
-                controller: _passwordCtrl,
-                obscureText: true,
-              ),
-              const SizedBox(height: 20),
-              PrimaryButton(
-                text: _isLoading ? 'Loading...' : 'Login',
-                onPressed: _isLoading ? () {} : _onLoginPressed,
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: _goToRegister,
-                child: const Text('Don\'t have an account? Register'),
-              ),
-            ],
-          ),
+      body: Padding(
+        padding: EdgeInsets.symmetric(horizontal: padding),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AuthTextField(label: 'Email', controller: _emailCtrl),
+            const SizedBox(height: 12),
+            AuthTextField(
+              label: 'Password',
+              controller: _passwordCtrl,
+              obscureText: true,
+            ),
+            const SizedBox(height: 20),
+            PrimaryButton(
+              text: _loading ? 'Loading...' : 'Login',
+              onPressed: _loading ? () {} : _login,
+            ),
+            TextButton(
+              onPressed: () => Navigator.pushNamed(context, '/register'),
+              child: const Text('Create account'),
+            ),
+          ],
         ),
       ),
     );
