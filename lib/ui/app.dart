@@ -4,6 +4,7 @@ import 'package:rmd2526zabrotskyimykola/ui/home_page.dart';
 import 'package:rmd2526zabrotskyimykola/ui/login_page.dart';
 import 'package:rmd2526zabrotskyimykola/ui/profile_page.dart';
 import 'package:rmd2526zabrotskyimykola/ui/register_page.dart';
+import 'package:rmd2526zabrotskyimykola/ui/splash_page.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -11,12 +12,12 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Lab 2',
+      title: 'Lab 4',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      initialRoute: '/login',
+      home: const SplashPage(),
       routes: {
         '/login': (_) => const LoginPage(),
         '/register': (_) => const RegisterPage(),

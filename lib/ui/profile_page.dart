@@ -81,9 +81,15 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 12),
 
             FilledButton(
-              onPressed: () {
-                Navigator.pop(context, '/home');
-                Navigator.pushReplacementNamed(context, '/login');
+              onPressed: () async {
+                await authService.logout();
+                if (!mounted) return;
+
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/login',
+                  (_) => false,
+                );
               },
               child: const Text('Log out'),
             ),

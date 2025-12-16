@@ -8,12 +8,17 @@ abstract class UserLocalDataSource {
   Future<AppUser?> getUser();
 
   Future<void> clearUser();
+
+  Future<void> setLoggedIn(bool value);
+
+  Future<bool> isLoggedIn();
 }
 
 class UserLocalDataSourcePrefs implements UserLocalDataSource {
   static const _keyEmail = 'user_email';
   static const _keyName = 'user_name';
   static const _keyPassword = 'user_password';
+  static const _keyLoggedIn = 'user_logged_in';
 
   @override
   Future<void> saveUser(AppUser user) async {
@@ -43,5 +48,18 @@ class UserLocalDataSourcePrefs implements UserLocalDataSource {
     await prefs.remove(_keyEmail);
     await prefs.remove(_keyName);
     await prefs.remove(_keyPassword);
+    await prefs.remove(_keyLoggedIn);
+  }
+
+  @override
+  Future<void> setLoggedIn(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyLoggedIn, value);
+  }
+
+  @override
+  Future<bool> isLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyLoggedIn) ?? false;
   }
 }

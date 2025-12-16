@@ -6,4 +6,8 @@ abstract class UserRepository {
   Future<AppUser?> loadUser();
 
   Future<void> deleteUser();
+
+  Future<void> setLoggedIn(bool value);
+
+  Future<bool> isLoggedIn();
 }

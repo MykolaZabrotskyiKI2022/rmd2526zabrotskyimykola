@@ -17,6 +17,12 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    _redirectIfLoggedIn();
+  }
+
+  @override
   void dispose() {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
@@ -25,6 +31,15 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _onLoginPressed() async {
     setState(() => _isLoading = true);
+
+    final hasConnection = await connectivityService.hasConnection();
+
+    if (!hasConnection) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _showMessage('No internet connection. Please check network and retry.');
+      return;
+    }
 
     final error = await authService.login(
       email: _emailCtrl.text,
@@ -39,6 +54,13 @@ class _LoginPageState extends State<LoginPage> {
       _showMessage(error);
       return;
     }
+
+    Navigator.pushReplacementNamed(context, '/home');
+  }
+
+  Future<void> _redirectIfLoggedIn() async {
+    final hasSession = await authService.hasActiveSession();
+    if (!mounted || !hasSession) return;
 
     Navigator.pushReplacementNamed(context, '/home');
   }

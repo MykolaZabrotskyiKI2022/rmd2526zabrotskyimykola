@@ -21,4 +21,14 @@ class UserRepositoryImpl implements UserRepository {
   Future<void> deleteUser() {
     return _local.clearUser();
   }
+
+  @override
+  Future<void> setLoggedIn(bool value) {
+    return _local.setLoggedIn(value);
+  }
+
+  @override
+  Future<bool> isLoggedIn() {
+    return _local.isLoggedIn();
+  }
 }

@@ -49,6 +49,7 @@ class AuthService {
       return 'Incorrect password';
     }
 
+    await _repository.setLoggedIn(true);
     return null;
   }
 
@@ -56,12 +57,21 @@ class AuthService {
     return _repository.loadUser();
   }
 
+  Future<bool> hasActiveSession() {
+    return _repository.isLoggedIn();
+  }
+
   Future<void> updateUser(AppUser user) {
     return _repository.saveUser(user);
   }
 
-  Future<void> deleteUser() {
-    return _repository.deleteUser();
+  Future<void> logout() {
+    return _repository.setLoggedIn(false);
+  }
+
+  Future<void> deleteUser() async {
+    await _repository.deleteUser();
+    await _repository.setLoggedIn(false);
   }
 
   String? _validateRegistration({

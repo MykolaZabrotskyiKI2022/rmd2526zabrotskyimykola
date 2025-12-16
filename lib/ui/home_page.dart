@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:rmd2526zabrotskyimykola/di/app_dependencies.dart';
 import 'package:rmd2526zabrotskyimykola/domain/entities/app_user.dart';
@@ -14,16 +17,35 @@ class _HomePageState extends State<HomePage> {
   AppUser? _user;
   final TextEditingController _nameCtrl = TextEditingController();
   bool _isLoading = true;
+  double? _temperature;
+  double? _humidity;
+  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
+
+  late final VoidCallback _temperatureListener;
+  late final VoidCallback _humidityListener;
 
   @override
   void initState() {
     super.initState();
+    _temperatureListener = () {
+      setState(() => _temperature = mqttService.temperature.value);
+    };
+    _humidityListener = () {
+      setState(() => _humidity = mqttService.humidity.value);
+    };
     _loadUser();
+    _listenConnectivity();
+    _bindMqtt();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showOfflineNotice());
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _connectivitySubscription?.cancel();
+    mqttService.temperature.removeListener(_temperatureListener);
+    mqttService.humidity.removeListener(_humidityListener);
+    mqttService.disconnect();
     super.dispose();
   }
 
@@ -53,7 +75,57 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _deleteUser() async {
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Delete account'),
+            content:
+                const Text('Are you sure you want to delete saved credentials?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!confirmed) return;
+
     await authService.deleteUser();
+    if (!mounted) return;
+
+    Navigator.pushReplacementNamed(context, '/login');
+  }
+
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Log out'),
+            content: const Text('Do you really want to leave the app?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Stay'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Log out'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!confirmed) return;
+
+    await authService.logout();
     if (!mounted) return;
 
     Navigator.pushReplacementNamed(context, '/login');
@@ -61,6 +133,39 @@ class _HomePageState extends State<HomePage> {
 
   void _goToProfile() {
     Navigator.pushNamed(context, '/profile');
+  }
+
+  Future<void> _bindMqtt() async {
+    mqttService.temperature.addListener(_temperatureListener);
+    mqttService.humidity.addListener(_humidityListener);
+
+    final online = await connectivityService.hasConnection();
+    if (!online) return;
+
+    await mqttService.connect();
+  }
+
+  void _listenConnectivity() {
+    _connectivitySubscription = connectivityService.changes.listen((status) {
+      if (status == ConnectivityResult.none) {
+        _showMessage('Internet connection lost. Live data paused.');
+      } else {
+        _showMessage('Back online. Reconnecting to MQTT...');
+        mqttService.connect();
+      }
+    });
+  }
+
+  void _showOfflineNotice() {
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && args['offline'] == true) {
+      _showMessage('You are offline. Saved session loaded.');
+    }
+  }
+
+  String _formatSensorValue(double? value) {
+    if (value == null) return '--';
+    return value.toStringAsFixed(2);
   }
 
   void _showMessage(String text) {
@@ -80,6 +185,7 @@ class _HomePageState extends State<HomePage> {
         title: Text(user?.email ?? 'IoT Dashboard'),
         actions: [
           IconButton(onPressed: _goToProfile, icon: const Icon(Icons.person)),
+          IconButton(onPressed: _logout, icon: const Icon(Icons.logout)),
           IconButton(onPressed: _deleteUser, icon: const Icon(Icons.delete)),
         ],
       ),
@@ -93,16 +199,16 @@ class _HomePageState extends State<HomePage> {
                 child: Text('Logged in as: ${user.email}'),
               ),
             const SizedBox(height: 16),
-            const SensorCard(
+            SensorCard(
               title: 'Temperature',
-              value: '22',
+              value: _formatSensorValue(_temperature),
               unit: '°C',
               icon: Icons.thermostat,
             ),
             const SizedBox(height: 12),
-            const SensorCard(
+            SensorCard(
               title: 'Humidity',
-              value: '45',
+              value: _formatSensorValue(_humidity),
               unit: '%',
               icon: Icons.water_drop,
             ),
