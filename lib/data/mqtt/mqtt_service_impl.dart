@@ -1,6 +1,8 @@
 import 'dart:async';
 
+// ignore: depend_on_referenced_packages
 import 'package:mqtt_client/mqtt_client.dart';
+// ignore: depend_on_referenced_packages
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:rmd2526zabrotskyimykola/domain/services/mqtt_service.dart';
 
@@ -19,6 +21,7 @@ class MqttServiceImpl implements MqttService {
   final StreamController<String> _humCtrl =
       StreamController<String>.broadcast();
 
+  // ignore: strict_raw_type
   StreamSubscription? _updatesSub;
 
   @override

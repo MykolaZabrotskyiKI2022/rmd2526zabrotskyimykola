@@ -1,10 +1,12 @@
 import 'dart:async';
 
+// ignore: depend_on_referenced_packages
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:rmd2526zabrotskyimykola/di/app_dependencies.dart';
 import 'package:rmd2526zabrotskyimykola/domain/entities/app_user.dart';
 import 'package:rmd2526zabrotskyimykola/ui/widgets/sensor_card.dart';
+import 'package:rmd2526zabrotskyimykola/domain/entities/weather_info.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -28,6 +30,8 @@ class _HomePageState extends State<HomePage> {
   StreamSubscription<String>? _humSub;
   StreamSubscription<List<ConnectivityResult>>? _connSub;
 
+  Future<WeatherInfo>? _weatherFuture;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +49,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _bootstrap() async {
     await _loadUser();
+    _weatherFuture = weatherRepository.getWeather('lviv');
     await _checkInternetOnStart();
     _watchConnectivity();
     await _setupMqttIfPossible();
@@ -271,6 +276,50 @@ class _HomePageState extends State<HomePage> {
               unit: '%',
               icon: Icons.water_drop,
             ),
+
+            FutureBuilder<WeatherInfo>(
+              future: _weatherFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: LinearProgressIndicator(),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Card(
+                    child: ListTile(
+                      title: const Text('Weather'),
+                      subtitle: Text('Error: ${snapshot.error}'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.refresh),
+                        onPressed: () {
+                          setState(() {
+                            _weatherFuture = weatherRepository.getWeather(
+                              'lviv',
+                            );
+                          });
+                        },
+                      ),
+                    ),
+                  );
+                }
+
+                final w = snapshot.data!;
+                return Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.cloud),
+                    title: Text('Weather in ${w.city}'),
+                    subtitle: Text(
+                      '${w.description} • Humidity ${w.humidity}% • Wind ${w.windSpeed} m/s',
+                    ),
+                    trailing: Text('${w.temp.toStringAsFixed(1)}°C'),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
 
             const Divider(height: 32),
 

@@ -19,6 +19,7 @@ analyzer:
     dead_code: error
     unused_import: error
     unused_element: ignore
+    directives_ordering: ignore
 
 linter:
   rules:
