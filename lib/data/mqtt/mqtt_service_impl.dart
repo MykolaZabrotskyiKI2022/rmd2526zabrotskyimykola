@@ -19,7 +19,7 @@ class MqttServiceImpl implements MqttService {
   final StreamController<String> _humCtrl =
       StreamController<String>.broadcast();
 
-  StreamSubscription? _updatesSub;
+  StreamSubscription<dynamic>? _updatesSub;
 
   @override
   Stream<String> temperatureStream() => _tempCtrl.stream;
