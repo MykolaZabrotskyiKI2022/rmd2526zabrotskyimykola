@@ -31,7 +31,7 @@ const _openWeatherKey = '15e2ee89274387958997061353681800';
 
 final WeatherLocalDataSource weatherLocal = WeatherLocalDataSource();
 
-final WeatherService weatherService = OpenWeatherServiceImpl(
+const WeatherService weatherService = OpenWeatherServiceImpl(
   apiKey: _openWeatherKey,
 );
 

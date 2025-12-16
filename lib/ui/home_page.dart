@@ -26,6 +26,8 @@ class _HomePageState extends State<HomePage> {
   String _temperature = '--';
   String _humidity = '--';
 
+  String _status = 'MQTT: offline';
+
   StreamSubscription<String>? _tempSub;
   StreamSubscription<String>? _humSub;
   StreamSubscription<List<ConnectivityResult>>? _connSub;
@@ -77,20 +79,33 @@ class _HomePageState extends State<HomePage> {
 
   void _watchConnectivity() {
     _connSub = Connectivity().onConnectivityChanged.listen((results) async {
+      if (!mounted) return;
+
       final noNetwork = results.contains(ConnectivityResult.none);
 
       if (noNetwork) {
         _showMessage('Network lost. MQTT may stop updating.');
+        setState(() {
+          _mqttConnected = false;
+          _status = 'MQTT: disconnected';
+        });
         return;
       }
 
-      final ok = await internetService.hasInternet();
-      if (!ok) {
-        _showMessage('Network is back, but Internet is not available.');
+      final hasInternet = await internetService.hasInternet();
+      if (!mounted) return;
+
+      if (!hasInternet) {
+        _showMessage('Network is back. But no Internet access.');
+        setState(() {
+          _mqttConnected = false;
+          _status = 'MQTT: disconnected';
+        });
         return;
       }
 
       if (!_mqttConnected) {
+        _showMessage('Network is back. Reconnecting MQTT...');
         await _setupMqttIfPossible();
       }
     });
@@ -98,7 +113,9 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _setupMqttIfPossible() async {
     final ok = await internetService.hasInternet();
-    if (!ok) return;
+    if (!ok) {
+      return;
+    }
 
     try {
       await mqttService.connect();
@@ -118,10 +135,14 @@ class _HomePageState extends State<HomePage> {
 
       if (!mounted) return;
       setState(() => _mqttConnected = true);
+      setState(() => _status = 'MQTT: connected');
     } catch (_) {
-      _showMessage('MQTT connection failed.');
       if (!mounted) return;
-      setState(() => _mqttConnected = false);
+      print('MQTT: Connection failed');
+      setState(() {
+        _status = 'MQTT: disconnected';
+        _mqttConnected = false;
+      });
     }
   }
 
@@ -224,7 +245,6 @@ class _HomePageState extends State<HomePage> {
     }
 
     final user = _user;
-    final status = _mqttConnected ? 'MQTT: connected' : 'MQTT: offline';
 
     return Scaffold(
       appBar: AppBar(
@@ -249,7 +269,7 @@ class _HomePageState extends State<HomePage> {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                status,
+                _status,
                 style: TextStyle(
                   color: _mqttConnected ? Colors.green : Colors.orange,
                 ),

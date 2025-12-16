@@ -94,7 +94,7 @@ class MqttServiceImpl implements MqttService {
   Future<void> disconnect() async {
     await _updatesSub?.cancel();
     _updatesSub = null;
-
+    print('MQTT: Disconnecting');
     _client.disconnect();
     _isConnected = false;
   }

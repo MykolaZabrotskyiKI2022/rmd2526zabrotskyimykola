@@ -22,7 +22,6 @@ class ProfilePage extends StatelessWidget {
             }
 
             return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const CircleAvatar(
